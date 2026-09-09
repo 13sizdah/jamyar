@@ -1,0 +1,22 @@
+export function money(value: number | string | { toString(): string }) {
+  const n = Number(value);
+  return new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Number.isFinite(n) ? n : 0);
+}
+
+export function qty(value: number | string | { toString(): string }) {
+  const n = Number(value);
+  return new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 3 }).format(Number.isFinite(n) ? n : 0);
+}
+
+export function toJalali(date: Date | string) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+export function cn(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}

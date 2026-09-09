@@ -1,0 +1,224 @@
+@import "tailwindcss";
+
+:root {
+  --background: #09090b;
+  --foreground: #ededed;
+}
+
+.light {
+  --background: #eeeef0;
+  --foreground: #1d1d1f;
+  --color-surface: #e4e4e7;
+  --color-border: #c8c8cc;
+  --color-text-primary: #1d1d1f;
+  --color-text-secondary: #6e6e73;
+  --color-text-muted: #9a9a9e;
+}
+
+.light body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.light .tech-card {
+  background-color: #e8e8eb;
+  border-color: var(--color-border);
+}
+
+.light .tech-card:hover {
+  border-color: #86868b;
+}
+
+.light .bg-black {
+  background-color: #e2e2e5 !important;
+}
+
+.light .bg-neutral-900 {
+  background-color: #d5d5d9 !important;
+}
+
+.light .text-white {
+  color: #1d1d1f !important;
+}
+
+.light aside {
+  background-color: #e2e2e5 !important;
+  border-color: var(--color-border) !important;
+}
+
+.light aside .bg-surface {
+  background-color: #d5d5d9 !important;
+}
+
+.light aside .logo-mark {
+  background-color: #1d1d1f !important;
+  color: #eeeef0 !important;
+}
+
+.light .bg-surface {
+  background-color: #e4e4e7 !important;
+}
+
+.light input,
+.light select,
+.light textarea {
+  background-color: #e4e4e7 !important;
+  border-color: var(--color-border) !important;
+  color: #1d1d1f !important;
+}
+
+.light input::placeholder {
+  color: #9a9a9e !important;
+}
+
+.light code {
+  background-color: #d8d8dc !important;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: #0a0a0a;
+  --color-border: #333333;
+  --color-text-primary: #ededed;
+  --color-text-secondary: #888888;
+  --color-text-muted: #444444;
+  --font-sans: var(--font-vazirmatn), var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.light ::-webkit-scrollbar-track {
+  background: #f5f5f7;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #c7c7cc;
+}
+
+.mono-label {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+}
+
+.tech-card {
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  transition: border-color 0.2s;
+}
+
+.tech-card:hover {
+  border-color: #555555;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-vazirmatn), var(--font-inter), sans-serif;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #86868b;
+}
+
+label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.3rem;
+  font-family: var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.04em;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+th {
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  font-family: var(--font-jetbrains-mono), monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+td {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 0.375rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #fff;
+  color: #000;
+  border: 0;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #e4e4e7;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--color-border);
+}
+
+.btn-ghost:hover {
+  border-color: #555;
+  background: transparent;
+}
+
+.btn-danger {
+  background: transparent;
+  color: #fb7185;
+  border: 1px solid #9f1239;
+}

@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  BRANCH_MANAGER
+  WAREHOUSE
+  ACCOUNTANT
+  STAFF
+}
+
+enum InvoiceType {
+  PURCHASE
+  SALE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  POSTED
+}
+
+enum StockMovementType {
+  IN
+  OUT
+  TRANSFER_IN
+  TRANSFER_OUT
+  ADJUSTMENT
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum PartyType {
+  SUPPLIER
+  CUSTOMER
+}
+
+enum JournalSource {
+  MANUAL
+  INVOICE
+  PAYROLL
+}
+
+model Organization {
+  id         String     @id @default(cuid())
+  name       String
+  createdAt  DateTime   @default(now())
+  branches   Branch[]
+  users      User[]
+  categories Category[]
+  units      Unit[]
+  products   Product[]
+  parties    Party[]
+  accounts   Account[]
+}
+
+model Branch {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  city           String          @default("")
+  active         Boolean         @default(true)
+  warehouses     Warehouse[]
+  users          User[]
+  invoices       Invoice[]
+  journalEntries JournalEntry[]
+  payrollEntries PayrollEntry[]
+}
+
+model Warehouse {
+  id          String          @id @default(cuid())
+  branchId    String
+  branch      Branch          @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  name        String
+  stockLevels StockLevel[]
+  movements   StockMovement[]
+  invoices    Invoice[]
+}
+
+model User {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branchId       String?
+  branch         Branch?         @relation(fields: [branchId], references: [id])
+  email          String          @unique
+  passwordHash   String
+  name           String
+  phone          String          @default("")
+  role           Role
+  active         Boolean         @default(true)
+  hiredAt        DateTime        @default(now())
+  notes          String          @default("")
+  createdAt      DateTime        @default(now())
+  payrollEntries PayrollEntry[]
+}
+
+model Category {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  products       Product[]
+}
+
+model Unit {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  products       Product[]
+}
+
+model Product {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  categoryId     String
+  category       Category        @relation(fields: [categoryId], references: [id])
+  unitId         String
+  unit           Unit            @relation(fields: [unitId], references: [id])
+  sku            String
+  name           String
+  minStock       Decimal         @default(0) @db.Decimal(14, 3)
+  avgCost        Decimal         @default(0) @db.Decimal(14, 4)
+  salePrice      Decimal         @default(0) @db.Decimal(14, 2)
+  active         Boolean         @default(true)
+  stockLevels    StockLevel[]
+  movements      StockMovement[]
+  invoiceLines   InvoiceLine[]
+
+  @@unique([organizationId, sku])
+}
+
+model StockLevel {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  quantity    Decimal   @default(0) @db.Decimal(14, 3)
+
+  @@unique([productId, warehouseId])
+}
+
+model StockMovement {
+  id            String             @id @default(cuid())
+  productId     String
+  product       Product            @relation(fields: [productId], references: [id])
+  warehouseId   String
+  warehouse     Warehouse          @relation(fields: [warehouseId], references: [id])
+  type          StockMovementType
+  quantity      Decimal            @db.Decimal(14, 3)
+  unitCost      Decimal            @db.Decimal(14, 4)
+  note          String             @default("")
+  invoiceId     String?
+  transferGroup String?
+  createdAt     DateTime           @default(now())
+}
+
+model Party {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type           PartyType
+  name           String
+  phone          String       @default("")
+  invoices       Invoice[]
+}
+
+model Account {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  code           String
+  name           String
+  type           AccountType
+  systemKey      String?
+  journalLines   JournalLine[]
+
+  @@unique([organizationId, code])
+}
+
+model Invoice {
+  id             String         @id @default(cuid())
+  branchId       String
+  branch         Branch         @relation(fields: [branchId], references: [id])
+  warehouseId    String
+  warehouse      Warehouse      @relation(fields: [warehouseId], references: [id])
+  partyId        String
+  party          Party          @relation(fields: [partyId], references: [id])
+  type           InvoiceType
+  status         InvoiceStatus  @default(DRAFT)
+  number         String
+  date           DateTime       @default(now())
+  note           String         @default("")
+  paid           Boolean        @default(false)
+  journalEntryId String?        @unique
+  journalEntry   JournalEntry?  @relation(fields: [journalEntryId], references: [id])
+  lines          InvoiceLine[]
+  createdAt      DateTime       @default(now())
+
+  @@unique([branchId, type, number])
+}
+
+model InvoiceLine {
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Decimal @db.Decimal(14, 3)
+  unitPrice Decimal @db.Decimal(14, 2)
+}
+
+model JournalEntry {
+  id          String        @id @default(cuid())
+  branchId    String
+  branch      Branch        @relation(fields: [branchId], references: [id])
+  number      String
+  date        DateTime      @default(now())
+  description String
+  source      JournalSource @default(MANUAL)
+  posted      Boolean       @default(true)
+  lines       JournalLine[]
+  invoice     Invoice?
+  payroll     PayrollEntry?
+  createdAt   DateTime      @default(now())
+
+  @@unique([branchId, number])
+}
+
+model JournalLine {
+  id        String       @id @default(cuid())
+  entryId   String
+  entry     JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  accountId String
+  account   Account      @relation(fields: [accountId], references: [id])
+  debit     Decimal      @default(0) @db.Decimal(14, 2)
+  credit    Decimal      @default(0) @db.Decimal(14, 2)
+  memo      String       @default("")
+}
+
+model PayrollEntry {
+  id             String        @id @default(cuid())
+  branchId       String
+  branch         Branch        @relation(fields: [branchId], references: [id])
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  period         String
+  amount         Decimal       @db.Decimal(14, 2)
+  paid           Boolean       @default(false)
+  note           String        @default("")
+  journalEntryId String?       @unique
+  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
+  createdAt      DateTime      @default(now())
+}

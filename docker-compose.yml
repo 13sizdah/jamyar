@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jamyar
+      POSTGRES_PASSWORD: jamyar
+      POSTGRES_DB: jamyar
+    ports:
+      - "5432:5432"
+    volumes:
+      - jamyar_pg:/var/lib/postgresql/data
+
+volumes:
+  jamyar_pg:
