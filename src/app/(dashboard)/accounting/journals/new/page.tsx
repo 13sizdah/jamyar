@@ -18,7 +18,7 @@ export default async function NewJournalPage() {
   return (
     <div className="p-4 max-w-3xl">
       <BackLink href="/accounting/journals" label="اسناد" />
-      <PageHeader title="سند دستی" subtitle="MANUAL JE" />
+      <PageHeader title="سند دستی" subtitle="ثبت سند" />
       <JournalForm branches={branches} accounts={accounts} />
     </div>
   );

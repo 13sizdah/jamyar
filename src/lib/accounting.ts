@@ -9,6 +9,7 @@ export async function postInvoice(invoiceId: string) {
       include: { lines: { include: { product: true } }, warehouse: true, branch: true },
     });
     if (invoice.status === "POSTED") throw new Error("این فاکتور قبلاً ثبت شده است");
+    if (invoice.status === "VOIDED") throw new Error("فاکتور باطل‌شده را نمی‌توان ثبت کرد");
     if (invoice.lines.length === 0) throw new Error("فاکتور بدون ردیف است");
 
     const orgId = invoice.branch.organizationId;
@@ -86,7 +87,7 @@ export async function postInvoice(invoiceId: string) {
   });
 }
 
-export async function createAndPostInvoice(input: {
+type InvoiceInput = {
   branchId: string;
   warehouseId: string;
   partyId: string;
@@ -95,7 +96,9 @@ export async function createAndPostInvoice(input: {
   note?: string;
   date?: Date;
   lines: { productId: string; quantity: number; unitPrice: number }[];
-}) {
+};
+
+export async function createDraftInvoice(input: InvoiceInput) {
   if (input.lines.length === 0) throw new Error("حداقل یک ردیف لازم است");
   const number = await nextInvoiceNumber(input.branchId, input.type);
   const invoice = await prisma.invoice.create({
@@ -104,6 +107,7 @@ export async function createAndPostInvoice(input: {
       warehouseId: input.warehouseId,
       partyId: input.partyId,
       type: input.type,
+      status: "DRAFT",
       number,
       paid: input.paid,
       note: input.note ?? "",
@@ -117,8 +121,97 @@ export async function createAndPostInvoice(input: {
       },
     },
   });
-  await postInvoice(invoice.id);
   return invoice.id;
+}
+
+export async function updateDraftInvoice(invoiceId: string, input: InvoiceInput) {
+  if (input.lines.length === 0) throw new Error("حداقل یک ردیف لازم است");
+  const existing = await prisma.invoice.findUniqueOrThrow({ where: { id: invoiceId } });
+  if (existing.status !== "DRAFT") throw new Error("فقط پیش‌نویس قابل ویرایش است");
+  await prisma.$transaction(async (tx) => {
+    await tx.invoiceLine.deleteMany({ where: { invoiceId } });
+    await tx.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        branchId: input.branchId,
+        warehouseId: input.warehouseId,
+        partyId: input.partyId,
+        type: input.type,
+        paid: input.paid,
+        note: input.note ?? "",
+        date: input.date ?? existing.date,
+        lines: {
+          create: input.lines.map((l) => ({
+            productId: l.productId,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+          })),
+        },
+      },
+    });
+  });
+  return invoiceId;
+}
+
+export async function createAndPostInvoice(input: InvoiceInput) {
+  const id = await createDraftInvoice(input);
+  await postInvoice(id);
+  return id;
+}
+
+export async function voidInvoice(invoiceId: string) {
+  await prisma.$transaction(async (tx) => {
+    const invoice = await tx.invoice.findUniqueOrThrow({
+      where: { id: invoiceId },
+      include: {
+        lines: true,
+        journalEntry: { include: { lines: true } },
+        branch: true,
+      },
+    });
+    if (invoice.status !== "POSTED") throw new Error("فقط فاکتور ثبت‌شده را می‌توان ابطال کرد");
+
+    const movements = await tx.stockMovement.findMany({ where: { invoiceId: invoice.id } });
+    for (const move of movements) {
+      const qty = Number(move.quantity);
+      const reverseType = invoice.type === "PURCHASE" ? "OUT" : "IN";
+      await applyStockChange(tx, {
+        productId: move.productId,
+        warehouseId: move.warehouseId,
+        delta: reverseType === "IN" ? qty : -qty,
+        type: reverseType,
+        unitCost: Number(move.unitCost),
+        invoiceId: invoice.id,
+        note: `ابطال فاکتور ${invoice.number}`,
+      });
+    }
+
+    if (invoice.journalEntry) {
+      const number = await nextJournalNumber(invoice.branchId, tx);
+      await tx.journalEntry.create({
+        data: {
+          branchId: invoice.branchId,
+          number,
+          description: `ابطال ${invoice.type === "PURCHASE" ? "خرید" : "فروش"} ${invoice.number}`,
+          source: "INVOICE",
+          date: new Date(),
+          lines: {
+            create: invoice.journalEntry.lines.map((l) => ({
+              accountId: l.accountId,
+              debit: Number(l.credit),
+              credit: Number(l.debit),
+              memo: `ابطال ${l.memo}`.trim(),
+            })),
+          },
+        },
+      });
+    }
+
+    await tx.invoice.update({
+      where: { id: invoice.id },
+      data: { status: "VOIDED" },
+    });
+  });
 }
 
 export async function createManualJournal(input: {
@@ -198,11 +291,23 @@ export async function createPayroll(input: {
   });
 }
 
-export async function trialBalance(organizationId: string, branchId?: string) {
+export async function trialBalance(
+  organizationId: string,
+  branchId?: string,
+  range?: { from?: Date; to?: Date },
+) {
   const lines = await prisma.journalLine.findMany({
     where: {
       entry: {
         posted: true,
+        ...(range?.from || range?.to
+          ? {
+              date: {
+                ...(range.from ? { gte: range.from } : {}),
+                ...(range.to ? { lte: range.to } : {}),
+              },
+            }
+          : {}),
         branch: {
           organizationId,
           ...(branchId ? { id: branchId } : {}),
@@ -230,8 +335,12 @@ export async function trialBalance(organizationId: string, branchId?: string) {
   return [...map.values()].sort((a, b) => a.code.localeCompare(b.code));
 }
 
-export async function profitAndLoss(organizationId: string, branchId?: string) {
-  const rows = await trialBalance(organizationId, branchId);
+export async function profitAndLoss(
+  organizationId: string,
+  branchId?: string,
+  range?: { from?: Date; to?: Date },
+) {
+  const rows = await trialBalance(organizationId, branchId, range);
   const revenue = rows
     .filter((r) => r.type === "REVENUE")
     .reduce((s, r) => s + (r.credit - r.debit), 0);

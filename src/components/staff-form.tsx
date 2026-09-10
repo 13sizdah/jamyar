@@ -25,23 +25,23 @@ export function StaffForm({
   return (
     <div className="p-4 max-w-xl">
       <BackLink href="/staff" label="پرسنل" />
-      <PageHeader title={person ? "ویرایش پرسنل" : "کاربر جدید"} subtitle="RBAC" />
+      <PageHeader title={person ? "ویرایش پرسنل" : "کاربر جدید"} subtitle="دسترسی‌ها" />
       <form action={saveStaffAction} className="tech-card space-y-4 p-4 rounded-md">
         {person ? <input type="hidden" name="id" value={person.id} /> : null}
         <div>
-          <label>NAME</label>
+          <label>نام</label>
           <input name="name" required defaultValue={person?.name} />
         </div>
         <div>
-          <label>EMAIL</label>
+          <label>ایمیل</label>
           <input name="email" type="email" required defaultValue={person?.email} className="font-mono" />
         </div>
         <div>
-          <label>PHONE</label>
+          <label>تلفن</label>
           <input name="phone" defaultValue={person?.phone} />
         </div>
         <div>
-          <label>ROLE</label>
+          <label>نقش</label>
           <select name="role" defaultValue={person?.role ?? "STAFF"}>
             {roles.map((r) => (
               <option key={r} value={r}>
@@ -51,7 +51,7 @@ export function StaffForm({
           </select>
         </div>
         <div>
-          <label>BRANCH</label>
+          <label>شعبه</label>
           <select name="branchId" defaultValue={person?.branchId ?? ""}>
             <option value="">— همه / بدون شعبه —</option>
             {branches.map((b) => (
@@ -62,11 +62,11 @@ export function StaffForm({
           </select>
         </div>
         <div>
-          <label>PASSWORD {person ? "(خالی = بدون تغییر)" : ""}</label>
+          <label>رمز عبور {person ? "(خالی = بدون تغییر)" : ""}</label>
           <input name="password" type="password" required={!person} />
         </div>
         <div>
-          <label>NOTES</label>
+          <label>یادداشت</label>
           <textarea name="notes" rows={3} defaultValue={person?.notes} />
         </div>
         <label className="flex items-center gap-2 text-sm !font-sans normal-case tracking-normal">

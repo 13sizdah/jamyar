@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { money, toJalali } from "@/lib/format";
+import { journalSourceLabel, money, toJalali } from "@/lib/format";
 import { canManageAccounting } from "@/lib/permissions";
 import { scopedBranchIds } from "@/lib/scope";
 import { PageHeader } from "@/components/ui";
@@ -22,7 +22,7 @@ export default async function JournalsPage() {
     <div className="p-4">
       <PageHeader
         title="اسناد حسابداری"
-        subtitle="JOURNAL"
+        subtitle="دفتر روزنامه"
         action={
           canManageAccounting(user) ? (
             <Link className="btn" href="/accounting/journals/new">
@@ -46,11 +46,15 @@ export default async function JournalsPage() {
           <tbody>
             {entries.map((e) => (
               <tr key={e.id}>
-                <td className="font-mono text-blue-400">{e.number}</td>
+                <td>
+                  <Link className="font-mono text-blue-400 hover:text-white" href={`/accounting/journals/${e.id}`}>
+                    {e.number}
+                  </Link>
+                </td>
                 <td className="font-mono text-xs text-text-secondary">{toJalali(e.date)}</td>
                 <td>{e.branch.name}</td>
                 <td>{e.description}</td>
-                <td className="font-mono text-xs">{e.source}</td>
+                <td>{journalSourceLabel[e.source] ?? e.source}</td>
                 <td className="font-mono">{money(e.lines.reduce((s, l) => s + Number(l.debit), 0))}</td>
               </tr>
             ))}

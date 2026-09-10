@@ -18,7 +18,7 @@ export default async function MovementsPage() {
 
   return (
     <div className="p-4">
-      <PageHeader title="حرکات انبار" subtitle="STOCK LEDGER" />
+      <PageHeader title="حرکات انبار" subtitle="دفتر موجودی" />
       <div className="tech-card rounded-md overflow-x-auto">
         <table>
           <thead>

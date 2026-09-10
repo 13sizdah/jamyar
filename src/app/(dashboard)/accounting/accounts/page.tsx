@@ -15,7 +15,7 @@ export default async function AccountsPage() {
 
   return (
     <div className="p-4">
-      <PageHeader title="دفتر حساب‌ها" subtitle="COA" />
+      <PageHeader title="دفتر حساب‌ها" subtitle="فهرست حساب‌ها" />
       <div className="tech-card rounded-md overflow-x-auto">
         <table>
           <thead>

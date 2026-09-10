@@ -1,24 +1,44 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { money } from "@/lib/format";
 import { trialBalance } from "@/lib/accounting";
 import { canViewAccounting } from "@/lib/permissions";
 import { PageHeader } from "@/components/ui";
+import { parseReportRange, ReportFilters } from "@/components/report-filters";
 
-export default async function TrialBalancePage() {
+export default async function TrialBalancePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string; branchId?: string }>;
+}) {
   const user = await getSession();
   if (!user) redirect("/login");
   if (!canViewAccounting(user)) redirect("/");
-  const rows = await trialBalance(
-    user.organizationId,
-    user.role === "BRANCH_MANAGER" ? (user.branchId ?? undefined) : undefined,
-  );
+  const sp = await searchParams;
+  const range = parseReportRange(sp);
+  const showBranch = user.role !== "BRANCH_MANAGER";
+  const branchId = showBranch ? (sp.branchId || undefined) : (user.branchId ?? undefined);
+  const branches = showBranch
+    ? await prisma.branch.findMany({
+        where: { organizationId: user.organizationId, active: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
+  const rows = await trialBalance(user.organizationId, branchId, range);
   const debit = rows.reduce((s, r) => s + r.debit, 0);
   const credit = rows.reduce((s, r) => s + r.credit, 0);
 
   return (
     <div className="p-4">
-      <PageHeader title="تراز آزمایشی" subtitle="TRIAL BALANCE" />
+      <PageHeader title="تراز آزمایشی" subtitle="مانده حساب‌ها" />
+      <ReportFilters
+        from={sp.from}
+        to={sp.to}
+        branchId={branchId}
+        branches={branches}
+        showBranch={showBranch}
+      />
       <div className="tech-card rounded-md overflow-x-auto">
         <table>
           <thead>
@@ -36,7 +56,7 @@ export default async function TrialBalancePage() {
               <tr key={r.code}>
                 <td className="font-mono text-xs text-blue-400">{r.code}</td>
                 <td>{r.name}</td>
-                <td className="font-mono text-xs text-text-secondary">{r.type}</td>
+                <td className="text-xs text-text-secondary">{accountTypeLabel(r.type)}</td>
                 <td className="font-mono">{money(r.debit)}</td>
                 <td className="font-mono">{money(r.credit)}</td>
                 <td className="font-mono">{money(r.debit - r.credit)}</td>
@@ -53,4 +73,15 @@ export default async function TrialBalancePage() {
       </div>
     </div>
   );
+}
+
+function accountTypeLabel(type: string) {
+  const map: Record<string, string> = {
+    ASSET: "دارایی",
+    LIABILITY: "بدهی",
+    EQUITY: "حقوق مالکانه",
+    REVENUE: "درآمد",
+    EXPENSE: "هزینه",
+  };
+  return map[type] ?? type;
 }

@@ -57,18 +57,44 @@ export async function saveProductAction(formData: FormData) {
       },
     });
   } else {
-    await prisma.product.create({ data });
+    const product = await prisma.product.create({ data });
+    const openingQty = num(formData.get("openingQty"));
+    const warehouseId = String(formData.get("warehouseId") ?? "");
+    const openingCost = num(formData.get("openingCost"));
+    if (openingQty > 0) {
+      if (!warehouseId) throw new Error("برای موجودی اولیه انبار را انتخاب کنید");
+      await assertWarehouseInScope(user, warehouseId);
+      if (openingCost > 0) {
+        await prisma.product.update({ where: { id: product.id }, data: { avgCost: openingCost } });
+      }
+      await adjustStock({
+        productId: product.id,
+        warehouseId,
+        quantity: openingQty,
+        note: "موجودی اولیه",
+      });
+    }
   }
   revalidatePath("/inventory/products");
+  revalidatePath("/inventory/stock");
   redirect("/inventory/products");
 }
 
 export async function saveCategoryAction(formData: FormData) {
   const user = await requireSession();
   if (!canManageInventory(user)) throw new Error("FORBIDDEN");
+  const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   if (!name) throw new Error("نام دسته الزامی است");
-  await prisma.category.create({ data: { organizationId: user.organizationId, name } });
+  if (id) {
+    const category = await prisma.category.findFirst({
+      where: { id, organizationId: user.organizationId },
+    });
+    if (!category) throw new Error("FORBIDDEN");
+    await prisma.category.update({ where: { id }, data: { name } });
+  } else {
+    await prisma.category.create({ data: { organizationId: user.organizationId, name } });
+  }
   revalidatePath("/inventory/products");
 }
 

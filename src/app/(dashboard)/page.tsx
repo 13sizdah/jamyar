@@ -54,36 +54,36 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col p-4 gap-3">
-      <PageHeader title="Dashboard" subtitle="OPS OVERVIEW" />
+      <PageHeader title="داشبورد" subtitle="نمای عملیات" />
 
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         <Link href="/accounting/invoices" className="tech-card p-4 rounded-md flex flex-col justify-between h-24 group hover:border-white transition-colors">
           <div className="flex justify-between items-start">
-            <span className="mono-label text-text-secondary group-hover:text-white">Sales posted</span>
+            <span className="text-xs text-text-secondary group-hover:text-white">فروش ثبت‌شده</span>
             <span className="material-icons-outlined text-text-muted group-hover:text-white">point_of_sale</span>
           </div>
           <span className="text-2xl font-bold font-mono">{money(sales)}</span>
         </Link>
         <Link href="/accounting/invoices" className="tech-card p-4 rounded-md flex flex-col justify-between h-24 group hover:border-white transition-colors">
           <div className="flex justify-between items-start">
-            <span className="mono-label text-text-secondary group-hover:text-white">Purchases</span>
+            <span className="text-xs text-text-secondary group-hover:text-white">خرید</span>
             <span className="material-icons-outlined text-text-muted group-hover:text-white">local_shipping</span>
           </div>
           <span className="text-2xl font-bold font-mono">{money(purchases)}</span>
         </Link>
         <Link href="/inventory/stock" className="tech-card p-4 rounded-md flex flex-col justify-between h-24 group hover:border-white transition-colors">
           <div className="flex justify-between items-start">
-            <span className="mono-label text-text-secondary group-hover:text-white">Low stock</span>
+            <span className="text-xs text-text-secondary group-hover:text-white">موجودی کم</span>
             <span className="material-icons-outlined text-text-muted group-hover:text-white">warning</span>
           </div>
           <div className="flex items-end gap-2">
             <span className="text-2xl font-bold font-mono">{alerts.length}</span>
-            {alerts.length > 0 ? <span className="text-xs font-mono text-orange-400 mb-1">HOT</span> : <span className="text-xs font-mono text-green-400 mb-1">OK</span>}
+            {alerts.length > 0 ? <span className="text-xs font-mono text-orange-400 mb-1">هشدار</span> : <span className="text-xs font-mono text-green-400 mb-1">سالم</span>}
           </div>
         </Link>
         <Link href="/staff" className="tech-card p-4 rounded-md flex flex-col justify-between h-24 group hover:border-white transition-colors">
           <div className="flex justify-between items-start">
-            <span className="mono-label text-text-secondary group-hover:text-white">Active staff</span>
+            <span className="text-xs text-text-secondary group-hover:text-white">پرسنل فعال</span>
             <span className="material-icons-outlined text-text-muted group-hover:text-white">group</span>
           </div>
           <span className="text-2xl font-bold font-mono">{staffCount}</span>
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
 
       {canViewAccounting(user) ? (
         <p className="text-xs font-mono text-text-secondary">
-          CASH 1101 · <span className="text-white">{money(cashBal)}</span> RIAL
+          نقد حساب ۱۱۰۱ · <span className="text-white">{money(cashBal)}</span> ریال
         </p>
       ) : null}
 
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
         <div className="tech-card p-3 rounded-md">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold">موجودی زیر حداقل</h3>
-            <span className="font-mono text-xs text-text-secondary">ALERTS</span>
+            <span className="text-xs text-text-secondary">هشدار</span>
           </div>
           {alerts.length === 0 ? (
             <p className="text-sm text-text-secondary">موردی نیست.</p>
@@ -129,7 +129,7 @@ export default async function DashboardPage() {
         <div className="tech-card p-3 rounded-md overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold">آخرین حرکات انبار</h3>
-            <span className="font-mono text-xs text-text-secondary">LEDGER</span>
+            <span className="text-xs text-text-secondary">دفتر</span>
           </div>
           <table>
             <thead>
@@ -157,13 +157,13 @@ export default async function DashboardPage() {
       <div className="border-t border-border pt-2">
         <h3 className="text-xs font-bold text-white mb-1.5 flex items-center gap-2">
           <span className="material-icons-outlined text-base">terminal</span>
-          Quick Start
+          شروع سریع
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          <Quick href="/inventory/products/new" label="کالای جدید" icon="add_box" code="inventory · sku" color="text-green-400" />
-          <Quick href="/inventory/transfer" label="انتقال انبار" icon="swap_horiz" code="stock · transfer" color="text-blue-400" />
-          <Quick href="/accounting/invoices/new" label="فاکتور" icon="receipt" code="invoice · post" color="text-orange-400" />
-          <Quick href="/accounting/payroll" label="ثبت حقوق" icon="payments" code="payroll · je" color="text-purple-400" />
+          <Quick href="/inventory/products/new" label="کالای جدید" icon="add_box" code="کالا · کد" color="text-green-400" />
+          <Quick href="/inventory/transfer" label="انتقال انبار" icon="swap_horiz" code="موجودی · انتقال" color="text-blue-400" />
+          <Quick href="/accounting/invoices/new" label="فاکتور" icon="receipt" code="فاکتور · ثبت" color="text-orange-400" />
+          <Quick href="/accounting/payroll" label="ثبت حقوق" icon="payments" code="حقوق · سند" color="text-purple-400" />
         </div>
       </div>
     </div>
@@ -184,11 +184,11 @@ function Quick({ href, label, icon, code, color }: { href: string; label: string
 
 function moveLabel(type: string) {
   const map: Record<string, string> = {
-    IN: "IN",
-    OUT: "OUT",
-    TRANSFER_IN: "TR-IN",
-    TRANSFER_OUT: "TR-OUT",
-    ADJUSTMENT: "ADJ",
+    IN: "ورود",
+    OUT: "خروج",
+    TRANSFER_IN: "انتقال ورود",
+    TRANSFER_OUT: "انتقال خروج",
+    ADJUSTMENT: "تعدیل",
   };
   return map[type] ?? type;
 }

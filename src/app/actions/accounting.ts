@@ -4,21 +4,29 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { createAndPostInvoice, createManualJournal, createPayroll } from "@/lib/accounting";
-import { canManageAccounting } from "@/lib/permissions";
+import {
+  createDraftInvoice,
+  createManualJournal,
+  createPayroll,
+  postInvoice,
+  updateDraftInvoice,
+  voidInvoice,
+} from "@/lib/accounting";
+import { canManageAccounting, canManageInvoices } from "@/lib/permissions";
 import {
   assertBranchInScope,
   assertProductInOrganization,
   assertWarehouseInScope,
 } from "@/lib/scope";
+import { parseFormDate } from "@/lib/format";
 
 function num(v: FormDataEntryValue | null) {
   return Number(String(v ?? "0").replace(/,/g, ""));
 }
 
-export async function createInvoiceAction(formData: FormData) {
+async function invoicePayloadFromForm(formData: FormData) {
   const user = await requireSession();
-  if (!canManageAccounting(user) && user.role !== "BRANCH_MANAGER") throw new Error("FORBIDDEN");
+  if (!canManageInvoices(user)) throw new Error("FORBIDDEN");
   const branchId = String(formData.get("branchId") ?? "");
   const warehouseId = String(formData.get("warehouseId") ?? "");
   const type = String(formData.get("type") ?? "SALE") as "PURCHASE" | "SALE";
@@ -42,20 +50,77 @@ export async function createInvoiceAction(formData: FormData) {
     },
   });
   if (!party) throw new Error("طرف‌حساب معتبر نیست");
-
-  await createAndPostInvoice({
+  return {
     branchId,
     warehouseId,
     partyId,
     type,
     paid: formData.get("paid") === "on",
     note: String(formData.get("note") ?? ""),
+    date: parseFormDate(formData.get("date")),
     lines,
-  });
+  };
+}
+
+function revalidateInvoicePaths() {
   revalidatePath("/accounting/invoices");
   revalidatePath("/inventory/stock");
   revalidatePath("/accounting/trial-balance");
-  redirect("/accounting/invoices");
+  revalidatePath("/accounting/journals");
+}
+
+export async function createInvoiceAction(formData: FormData) {
+  const intent = String(formData.get("intent") ?? "draft");
+  const payload = await invoicePayloadFromForm(formData);
+  const id = await createDraftInvoice(payload);
+  if (intent === "post") await postInvoice(id);
+  revalidateInvoicePaths();
+  redirect(`/accounting/invoices/${id}`);
+}
+
+export async function updateInvoiceAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const intent = String(formData.get("intent") ?? "draft");
+  const user = await requireSession();
+  if (!canManageInvoices(user)) throw new Error("FORBIDDEN");
+  const existing = await prisma.invoice.findFirst({
+    where: { id, branch: { organizationId: user.organizationId } },
+  });
+  if (!existing) throw new Error("FORBIDDEN");
+  await assertBranchInScope(user, existing.branchId);
+  const payload = await invoicePayloadFromForm(formData);
+  await updateDraftInvoice(id, payload);
+  if (intent === "post") await postInvoice(id);
+  revalidateInvoicePaths();
+  redirect(`/accounting/invoices/${id}`);
+}
+
+export async function postInvoiceAction(formData: FormData) {
+  const user = await requireSession();
+  if (!canManageInvoices(user)) throw new Error("FORBIDDEN");
+  const id = String(formData.get("id") ?? "");
+  const invoice = await prisma.invoice.findFirst({
+    where: { id, branch: { organizationId: user.organizationId } },
+  });
+  if (!invoice) throw new Error("FORBIDDEN");
+  await assertBranchInScope(user, invoice.branchId);
+  await postInvoice(id);
+  revalidateInvoicePaths();
+  redirect(`/accounting/invoices/${id}`);
+}
+
+export async function voidInvoiceAction(formData: FormData) {
+  const user = await requireSession();
+  if (!canManageInvoices(user)) throw new Error("FORBIDDEN");
+  const id = String(formData.get("id") ?? "");
+  const invoice = await prisma.invoice.findFirst({
+    where: { id, branch: { organizationId: user.organizationId } },
+  });
+  if (!invoice) throw new Error("FORBIDDEN");
+  await assertBranchInScope(user, invoice.branchId);
+  await voidInvoice(id);
+  revalidateInvoicePaths();
+  redirect(`/accounting/invoices/${id}`);
 }
 
 export async function createJournalAction(formData: FormData) {
@@ -74,6 +139,7 @@ export async function createJournalAction(formData: FormData) {
   await createManualJournal({
     branchId,
     description: String(formData.get("description") ?? "").trim(),
+    date: parseFormDate(formData.get("date")),
     lines: accountIds.map((accountId, i) => ({
       accountId,
       debit: debits[i] || 0,
@@ -116,16 +182,27 @@ export async function createPayrollAction(formData: FormData) {
 
 export async function savePartyAction(formData: FormData) {
   const user = await requireSession();
-  if (!canManageAccounting(user) && user.role !== "BRANCH_MANAGER") throw new Error("FORBIDDEN");
+  if (!canManageInvoices(user)) throw new Error("FORBIDDEN");
+  const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   if (!name) throw new Error("نام طرف‌حساب الزامی است");
-  await prisma.party.create({
-    data: {
-      organizationId: user.organizationId,
-      type: String(formData.get("type") ?? "CUSTOMER") as "CUSTOMER" | "SUPPLIER",
-      name,
-      phone: String(formData.get("phone") ?? "").trim(),
-    },
-  });
+  const type = String(formData.get("type") ?? "CUSTOMER") as "CUSTOMER" | "SUPPLIER";
+  const phone = String(formData.get("phone") ?? "").trim();
+  if (id) {
+    const party = await prisma.party.findFirst({
+      where: { id, organizationId: user.organizationId },
+    });
+    if (!party) throw new Error("FORBIDDEN");
+    await prisma.party.update({ where: { id }, data: { name, type, phone } });
+  } else {
+    await prisma.party.create({
+      data: {
+        organizationId: user.organizationId,
+        type,
+        name,
+        phone,
+      },
+    });
+  }
   revalidatePath("/accounting/parties");
 }

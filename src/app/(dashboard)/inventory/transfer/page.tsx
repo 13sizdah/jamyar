@@ -22,10 +22,10 @@ export default async function TransferPage() {
 
   return (
     <div className="p-4 max-w-xl">
-      <PageHeader title="انتقال بین انبار" subtitle="TRANSFER" />
+      <PageHeader title="انتقال بین انبار" subtitle="جابه‌جایی موجودی" />
       <form action={transferAction} className="tech-card space-y-4 p-4 rounded-md">
         <div>
-          <label>PRODUCT</label>
+          <label>کالا</label>
           <select name="productId" required>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
@@ -35,7 +35,7 @@ export default async function TransferPage() {
           </select>
         </div>
         <div>
-          <label>FROM</label>
+          <label>از انبار</label>
           <select name="fromWarehouseId" required>
             {fromWarehouses.map((w) => (
               <option key={w.id} value={w.id}>
@@ -45,7 +45,7 @@ export default async function TransferPage() {
           </select>
         </div>
         <div>
-          <label>TO</label>
+          <label>به انبار</label>
           <select name="toWarehouseId" required>
             {orgWarehouses.map((w) => (
               <option key={w.id} value={w.id}>
@@ -55,11 +55,11 @@ export default async function TransferPage() {
           </select>
         </div>
         <div>
-          <label>QTY</label>
+          <label>مقدار</label>
           <input name="quantity" type="number" step="0.001" required className="font-mono" />
         </div>
         <div>
-          <label>NOTE</label>
+          <label>یادداشت</label>
           <input name="note" />
         </div>
         <button className="btn" type="submit">

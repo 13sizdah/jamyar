@@ -26,11 +26,11 @@ export default async function PayrollPage() {
 
   return (
     <div className="p-4">
-      <PageHeader title="حقوق" subtitle="PAYROLL" />
+      <PageHeader title="حقوق" subtitle="حقوق پرسنل" />
       {canManageAccounting(user) ? (
         <form action={createPayrollAction} className="tech-card mb-3 grid gap-3 p-3 rounded-md md:grid-cols-6">
           <div>
-            <label>BRANCH</label>
+            <label>شعبه</label>
             <select name="branchId" required>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -40,7 +40,7 @@ export default async function PayrollPage() {
             </select>
           </div>
           <div>
-            <label>STAFF</label>
+            <label>پرسنل</label>
             <select name="userId" required>
               {people.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -50,11 +50,11 @@ export default async function PayrollPage() {
             </select>
           </div>
           <div>
-            <label>PERIOD</label>
+            <label>دوره</label>
             <input name="period" placeholder="1404-06" required className="font-mono" />
           </div>
           <div>
-            <label>AMOUNT</label>
+            <label>مبلغ</label>
             <input name="amount" type="number" required className="font-mono" />
           </div>
           <label className="flex items-end gap-2 text-sm pb-2">

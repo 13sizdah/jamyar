@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createJournalAction } from "@/app/actions/accounting";
+import { toInputDate } from "@/lib/format";
 
 export function JournalForm({
   branches,
@@ -18,7 +19,7 @@ export function JournalForm({
   return (
     <form action={createJournalAction} className="tech-card space-y-4 p-4 rounded-md">
       <div>
-        <label>BRANCH</label>
+        <label>شعبه</label>
         <select name="branchId" required>
           {branches.map((b) => (
             <option key={b.id} value={b.id}>
@@ -28,11 +29,15 @@ export function JournalForm({
         </select>
       </div>
       <div>
-        <label>DESCRIPTION</label>
+        <label>تاریخ</label>
+        <input name="date" type="date" required defaultValue={toInputDate(new Date())} className="font-mono" />
+      </div>
+      <div>
+        <label>شرح</label>
         <input name="description" required />
       </div>
       <div className="flex justify-between">
-        <span className="mono-label text-text-secondary">LINES</span>
+        <span className="text-xs text-text-secondary">ردیف‌ها</span>
         <button
           type="button"
           className="btn-ghost px-2 py-1 text-xs rounded-md"

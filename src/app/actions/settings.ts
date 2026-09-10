@@ -18,7 +18,10 @@ export async function saveBranchAction(formData: FormData) {
       select: { id: true },
     });
     if (!branch) throw new Error("FORBIDDEN");
-    await prisma.branch.update({ where: { id: branch.id }, data: { name, city } });
+    await prisma.branch.update({
+      where: { id: branch.id },
+      data: { name, city, active: formData.get("active") === "on" },
+    });
   } else {
     const branch = await prisma.branch.create({
       data: { organizationId: user.organizationId, name, city },

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { money, toJalali } from "@/lib/format";
+import { invoiceStatusLabel, invoiceTypeLabel, money, toJalali } from "@/lib/format";
+import { canManageInvoices } from "@/lib/permissions";
 import { scopedBranchIds } from "@/lib/scope";
 import { PageHeader } from "@/components/ui";
 
@@ -20,9 +21,9 @@ export default async function InvoicesPage() {
     <div className="p-4">
       <PageHeader
         title="فاکتورها"
-        subtitle="SALE · PURCHASE"
+        subtitle="خرید و فروش"
         action={
-          user.role !== "STAFF" && user.role !== "WAREHOUSE" ? (
+          canManageInvoices(user) ? (
             <Link className="btn" href="/accounting/invoices/new">
               فاکتور جدید
             </Link>
@@ -52,11 +53,21 @@ export default async function InvoicesPage() {
                       {inv.number}
                     </Link>
                   </td>
-                  <td className="font-mono text-xs">{inv.type}</td>
+                  <td>{invoiceTypeLabel[inv.type]}</td>
                   <td>{inv.branch.name}</td>
                   <td>{inv.party.name}</td>
                   <td className="font-mono">{money(total)}</td>
-                  <td className={inv.status === "POSTED" ? "text-green-400 font-mono text-xs" : "font-mono text-xs"}>{inv.status}</td>
+                  <td
+                    className={
+                      inv.status === "POSTED"
+                        ? "text-green-400 font-mono text-xs"
+                        : inv.status === "VOIDED"
+                          ? "text-rose-400 font-mono text-xs"
+                          : "font-mono text-xs text-orange-400"
+                    }
+                  >
+                    {invoiceStatusLabel[inv.status]}
+                  </td>
                   <td className="font-mono text-xs text-text-secondary">{toJalali(inv.date)}</td>
                 </tr>
               );

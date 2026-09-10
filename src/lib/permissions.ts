@@ -34,6 +34,10 @@ export function canManageAccounting(user: SessionUser) {
   return user.role === "OWNER" || user.role === "ACCOUNTANT";
 }
 
+export function canManageInvoices(user: SessionUser) {
+  return canManageAccounting(user) || user.role === "BRANCH_MANAGER";
+}
+
 export function canViewAccounting(user: SessionUser) {
   return ["OWNER", "ACCOUNTANT", "BRANCH_MANAGER"].includes(user.role);
 }
@@ -66,6 +70,7 @@ export function navFor(user: SessionUser): NavItem[] {
       { href: "/accounting/accounts", label: "دفتر حساب‌ها", icon: "account_balance" },
     );
   }
+  items.push({ href: "/profile", label: "حساب من", icon: "person" });
   if (canManageSettings(user)) {
     items.push({ href: "/settings", label: "تنظیمات", icon: "settings" });
   }

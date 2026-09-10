@@ -23,11 +23,11 @@ export default async function StockPage() {
 
   return (
     <div className="p-4">
-      <PageHeader title="موجودی انبار" subtitle="ON HAND" />
+      <PageHeader title="موجودی انبار" subtitle="موجودی روی دست" />
       {canManageInventory(user) ? (
         <form action={adjustAction} className="tech-card mb-3 grid gap-3 p-3 rounded-md md:grid-cols-5">
           <div>
-            <label>PRODUCT</label>
+            <label>کالا</label>
             <select name="productId" required>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -37,7 +37,7 @@ export default async function StockPage() {
             </select>
           </div>
           <div>
-            <label>WAREHOUSE</label>
+            <label>انبار</label>
             <select name="warehouseId" required>
               {warehouses.map((w) => (
                 <option key={w.id} value={w.id}>
@@ -47,11 +47,11 @@ export default async function StockPage() {
             </select>
           </div>
           <div>
-            <label>DELTA (+/-)</label>
+            <label>تغییر مقدار (+/-)</label>
             <input name="quantity" type="number" step="0.001" required className="font-mono" />
           </div>
           <div>
-            <label>NOTE</label>
+            <label>یادداشت</label>
             <input name="note" />
           </div>
           <div className="flex items-end">

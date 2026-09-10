@@ -13,22 +13,23 @@ export default async function SettingsPage() {
     prisma.branch.findMany({
       where: { organizationId: user.organizationId },
       include: { warehouses: true },
+      orderBy: { name: "asc" },
     }),
     prisma.unit.findMany({ where: { organizationId: user.organizationId } }),
   ]);
 
   return (
     <div className="p-4 space-y-4">
-      <PageHeader title="تنظیمات" subtitle="ORG · BRANCH · UNIT" />
+      <PageHeader title="تنظیمات" subtitle="سازمان · شعبه · واحد" />
       <section className="tech-card p-4 rounded-md">
-        <h3 className="text-sm font-semibold mb-3">شعب</h3>
+        <h3 className="text-sm font-semibold mb-3">شعبه جدید</h3>
         <form action={saveBranchAction} className="grid gap-3 md:grid-cols-3 mb-4">
           <div>
-            <label>NAME</label>
+            <label>نام</label>
             <input name="name" required />
           </div>
           <div>
-            <label>CITY</label>
+            <label>شهر</label>
             <input name="city" />
           </div>
           <div className="flex items-end">
@@ -37,13 +38,29 @@ export default async function SettingsPage() {
             </button>
           </div>
         </form>
+        <h3 className="text-sm font-semibold mb-3">شعب موجود</h3>
         <div className="space-y-3">
           {branches.map((b) => (
             <div key={b.id} className="border border-border rounded-md p-3">
-              <p className="font-medium">
-                {b.name} <span className="text-text-secondary text-xs font-mono">{b.city}</span>
-              </p>
-              <p className="text-xs text-text-secondary mt-1">{b.warehouses.map((w) => w.name).join(" · ") || "بدون انبار"}</p>
+              <form action={saveBranchAction} className="grid gap-2 md:grid-cols-4 items-end">
+                <input type="hidden" name="id" value={b.id} />
+                <div>
+                  <label>نام</label>
+                  <input name="name" required defaultValue={b.name} />
+                </div>
+                <div>
+                  <label>شهر</label>
+                  <input name="city" defaultValue={b.city} />
+                </div>
+                <label className="flex items-center gap-2 text-sm !font-sans normal-case tracking-normal pb-2">
+                  <input className="w-auto" type="checkbox" name="active" defaultChecked={b.active} />
+                  فعال
+                </label>
+                <button className="btn" type="submit">
+                  ذخیره شعبه
+                </button>
+              </form>
+              <p className="text-xs text-text-secondary mt-2">{b.warehouses.map((w) => w.name).join(" · ") || "بدون انبار"}</p>
               <form action={saveWarehouseAction} className="mt-2 flex gap-2">
                 <input type="hidden" name="branchId" value={b.id} />
                 <input name="name" placeholder="نام انبار" required />

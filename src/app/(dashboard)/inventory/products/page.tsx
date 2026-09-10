@@ -23,7 +23,7 @@ export default async function ProductsPage() {
     <div className="p-4">
       <PageHeader
         title="کالاها"
-        subtitle="SKU · CATALOG"
+        subtitle="فهرست کالا"
         action={
           canManageInventory(user) ? (
             <Link className="btn" href="/inventory/products/new">
@@ -33,29 +33,41 @@ export default async function ProductsPage() {
         }
       />
       {canManageInventory(user) ? (
-        <form action={saveCategoryAction} className="tech-card mb-3 flex flex-wrap items-end gap-3 p-3 rounded-md">
-          <div className="min-w-48 flex-1">
-            <label>CATEGORY</label>
-            <input name="name" placeholder="مثلاً لبنیات" />
+        <div className="tech-card mb-3 space-y-3 p-3 rounded-md">
+          <form action={saveCategoryAction} className="flex flex-wrap items-end gap-3">
+            <div className="min-w-48 flex-1">
+              <label>دسته جدید</label>
+              <input name="name" placeholder="مثلاً لبنیات" />
+            </div>
+            <button className="btn" type="submit">
+              افزودن دسته
+            </button>
+          </form>
+          <div className="space-y-2">
+            {categories.map((c) => (
+              <form key={c.id} action={saveCategoryAction} className="flex flex-wrap items-end gap-2">
+                <input type="hidden" name="id" value={c.id} />
+                <div className="min-w-48 flex-1">
+                  <input name="name" required defaultValue={c.name} />
+                </div>
+                <button className="btn-ghost rounded-md px-3 text-xs" type="submit">
+                  ذخیره دسته
+                </button>
+              </form>
+            ))}
           </div>
-          <button className="btn" type="submit">
-            افزودن دسته
-          </button>
-          <p className="w-full text-[10px] font-mono text-text-muted">
-            {categories.map((c) => c.name).join(" · ") || "—"}
-          </p>
-        </form>
+        </div>
       ) : null}
       <div className="tech-card rounded-md overflow-x-auto">
         <table>
           <thead>
             <tr>
-              <th>SKU</th>
+              <th>کد</th>
               <th>نام</th>
               <th>دسته</th>
               <th>واحد</th>
               <th>حداقل</th>
-              <th>avg cost</th>
+              <th>میانگین بها</th>
               <th>فروش</th>
               <th></th>
             </tr>
@@ -72,8 +84,8 @@ export default async function ProductsPage() {
                 <td className="font-mono">{money(p.salePrice)}</td>
                 <td>
                   {canManageInventory(user) ? (
-                    <Link className="text-text-secondary hover:text-white font-mono text-xs" href={`/inventory/products/${p.id}`}>
-                      EDIT
+                    <Link className="text-text-secondary hover:text-white text-xs" href={`/inventory/products/${p.id}`}>
+                      ویرایش
                     </Link>
                   ) : null}
                 </td>

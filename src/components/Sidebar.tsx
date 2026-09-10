@@ -60,7 +60,9 @@ export function Sidebar({
         </div>
         <div className="space-y-3 border-t border-border pt-4">
           <div>
-            <p className="text-sm text-white">{userName}</p>
+            <Link href="/profile" onClick={onClose} className="text-sm text-white hover:underline">
+              {userName}
+            </Link>
             <p className="text-[10px] text-text-muted font-mono mt-0.5">{roleLabel}</p>
           </div>
           <form action={logoutAction}>

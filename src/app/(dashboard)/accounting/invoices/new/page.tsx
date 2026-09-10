@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { scopedBranchIds } from "@/lib/scope";
+import { canManageInvoices } from "@/lib/permissions";
 import { InvoiceForm } from "@/components/invoice-form";
 import { BackLink, PageHeader } from "@/components/ui";
 
 export default async function NewInvoicePage() {
   const user = await getSession();
   if (!user) redirect("/login");
-  if (user.role === "STAFF" || user.role === "WAREHOUSE") redirect("/accounting/invoices");
+  if (!canManageInvoices(user)) redirect("/accounting/invoices");
   const ids = await scopedBranchIds(user);
   const [branches, warehouses, parties, products] = await Promise.all([
     prisma.branch.findMany({ where: { id: { in: ids } } }),
@@ -20,7 +20,7 @@ export default async function NewInvoicePage() {
   return (
     <div className="p-4 max-w-3xl">
       <BackLink href="/accounting/invoices" label="فاکتورها" />
-      <PageHeader title="فاکتور جدید" subtitle="POST TO LEDGER" />
+      <PageHeader title="فاکتور جدید" subtitle="پیش‌نویس یا ثبت نهایی" />
       <InvoiceForm
         branches={branches}
         warehouses={warehouses}

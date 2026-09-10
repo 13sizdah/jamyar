@@ -2,10 +2,12 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { ProductForm } from "@/components/product-form";
+import { canManageInventory } from "@/lib/permissions";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getSession();
   if (!user) redirect("/login");
+  if (!canManageInventory(user)) redirect("/inventory/products");
   const { id } = await params;
   const [product, categories, units] = await Promise.all([
     prisma.product.findFirst({ where: { id, organizationId: user.organizationId } }),

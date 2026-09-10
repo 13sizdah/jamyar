@@ -1,8 +1,12 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { money, qty, toJalali } from "@/lib/format";
+import { invoiceStatusLabel, invoiceTypeLabel, money, qty, toJalali } from "@/lib/format";
+import { canManageInvoices } from "@/lib/permissions";
 import { scopedBranchIds } from "@/lib/scope";
+import { postInvoiceAction } from "@/app/actions/accounting";
+import { VoidInvoiceButton } from "@/components/void-invoice-button";
 import { BackLink, PageHeader } from "@/components/ui";
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,24 +20,35 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   });
   if (!invoice) notFound();
   const total = invoice.lines.reduce((s, l) => s + Number(l.quantity) * Number(l.unitPrice), 0);
+  const manage = canManageInvoices(user);
 
   return (
     <div className="p-4">
       <BackLink href="/accounting/invoices" label="فاکتورها" />
-      <PageHeader title={invoice.number} subtitle={`${invoice.type} · ${invoice.status}`} />
+      <PageHeader
+        title={invoice.number}
+        subtitle={`${invoiceTypeLabel[invoice.type]} · ${invoiceStatusLabel[invoice.status]}`}
+        action={
+          manage && invoice.status === "DRAFT" ? (
+            <Link className="btn" href={`/accounting/invoices/${invoice.id}/edit`}>
+              ویرایش
+            </Link>
+          ) : null
+        }
+      />
       <div className="grid gap-3 md:grid-cols-3 mb-3">
         <div className="tech-card p-3 rounded-md">
-          <span className="mono-label text-text-secondary">Party</span>
+          <span className="text-xs text-text-secondary">طرف‌حساب</span>
           <p className="mt-1">{invoice.party.name}</p>
         </div>
         <div className="tech-card p-3 rounded-md">
-          <span className="mono-label text-text-secondary">Warehouse</span>
+          <span className="text-xs text-text-secondary">انبار</span>
           <p className="mt-1">
             {invoice.branch.name} / {invoice.warehouse.name}
           </p>
         </div>
         <div className="tech-card p-3 rounded-md">
-          <span className="mono-label text-text-secondary">Date</span>
+          <span className="text-xs text-text-secondary">تاریخ</span>
           <p className="mt-1 font-mono">{toJalali(invoice.date)}</p>
         </div>
       </div>
@@ -64,8 +79,22 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         </table>
       </div>
       {invoice.journalEntry ? (
-        <p className="mt-3 text-xs font-mono text-text-secondary">JE {invoice.journalEntry.number}</p>
+        <p className="mt-3 text-xs">
+          سند{" "}
+          <Link className="font-mono text-blue-400 hover:text-white" href={`/accounting/journals/${invoice.journalEntry.id}`}>
+            {invoice.journalEntry.number}
+          </Link>
+        </p>
       ) : null}
+      {manage && invoice.status === "DRAFT" ? (
+        <form action={postInvoiceAction} className="mt-4">
+          <input type="hidden" name="id" value={invoice.id} />
+          <button className="btn" type="submit">
+            ثبت نهایی
+          </button>
+        </form>
+      ) : null}
+      {manage && invoice.status === "POSTED" ? <VoidInvoiceButton invoiceId={invoice.id} /> : null}
     </div>
   );
 }

@@ -23,6 +23,7 @@ enum InvoiceType {
 enum InvoiceStatus {
   DRAFT
   POSTED
+  VOIDED
 }
 
 enum StockMovementType {
